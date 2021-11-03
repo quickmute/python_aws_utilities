@@ -108,7 +108,7 @@ def get_org_access_report(job_id,accountname,filename):
 ## MAIN ##############################################################################################
 ######################################################################################################
 ## Update the profile to match the credential in your ~/.aws/credentials file
-profile = "default"
+profile = "master"
 session = boto3.Session(profile_name=profile)
 ## Update the region to match the region where you are. IAM and Org are region-free, so it shouldn't matter
 region = "us-east-1"
@@ -123,6 +123,8 @@ timestamp =nowmeow.strftime("%Y%m%d%H%M")
 
 ## Create an empty file, simple way to have a pre-existing excel file
 filename = "./" + timestamp + "_" + "org_access_report.xlsx"
+print("Generating Report, see ", filename)
+
 empty_df = pd.DataFrame()
 empty_df.to_excel(filename)  
 
@@ -142,12 +144,13 @@ job_content = []
 ### an error occurred (ReportGenerationLimitExceeded) when calling the GenerateOrganizationsAccessReport operation: 
 ### Maximum number of concurrent jobs exceeded
 for entitypath in full_paths:
-    print(entitypath)
+    print(entitypath, end=":")
     ## generate reports
     response = iamClient.generate_organizations_access_report(
         EntityPath=entitypath
     )
-    accountname = entitypath.split("/")
+    entitypath_array = entitypath.split("/")
+    accountname = entitypath_array[len(entitypath_array)-1]
     ## retrieve reports
     get_org_access_report(response["JobId"],accountname,filename)
     ## store this for later use. Not used at this time. 
