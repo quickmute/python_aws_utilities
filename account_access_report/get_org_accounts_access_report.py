@@ -40,8 +40,7 @@ def update_timezone(details):
     return new_details
        
 ## This is the bulk of this script, to generate and retrieve access report
-def get_org_access_report(job_id,accountname,prefix):
-    filename = "./" + prefix + "_" + "org_access_report.xlsx"
+def get_org_access_report(job_id,accountname,filename):
     ## table name must begin with a letter or underscore
     table_name = "T" + accountname
     total_details = []
@@ -80,7 +79,7 @@ def get_org_access_report(job_id,accountname,prefix):
         ## Need ExcelWriter so we can write multiple sheets to excel
         ## if_sheet_exists is set to none so we replace
         ## https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.to_excel.html
-        with pd.ExcelWriter(filename,mode='w') as writer:  
+        with pd.ExcelWriter(filename,mode='a') as writer:  
             df.to_excel(writer, sheet_name=accountname, index=False, header=True)
         
         ## this part is to create a formatted table inside excel
@@ -121,6 +120,12 @@ orgclient = session.client('organizations')
 nowmeow = datetime.datetime.now()
 ## we'll use the timestamp here to uniquely name the file that will be generated
 timestamp =nowmeow.strftime("%Y%m%d%H%M")
+
+## Create an empty file, simple way to have a pre-existing excel file
+filename = "./" + timestamp + "_" + "org_access_report.xlsx"
+empty_df = pd.DataFrame()
+empty_df.to_excel(filename)  
+
 ## get org info
 response = orgclient.describe_organization()
 org_id = response["Organization"]["Id"]
@@ -144,7 +149,7 @@ for entitypath in full_paths:
     )
     accountname = entitypath.split("/")
     ## retrieve reports
-    get_org_access_report(response["JobId"],accountname[len(accountname)-1],timestamp)
+    get_org_access_report(response["JobId"],accountname,filename)
     ## store this for later use. Not used at this time. 
     job_content = job_content + [
         {
