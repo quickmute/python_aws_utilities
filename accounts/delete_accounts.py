@@ -1,3 +1,6 @@
+## This script will try to clean up accounts from an org
+## You can only close 250 or 20% of total account whichever is larger in 30 day cycle
+## This also has a backup and jiggle to handle too many calls error
 from botocore.exceptions import ClientError
 import boto3
 import logging
@@ -52,15 +55,15 @@ for response in response_iterator:
         ## If it isn't active then we skip it
         if(account.get("State") != "ACTIVE"):
             continue
-        ## keep track of how many active accounts we found
         account_id = account.get("Id")
+        ## don't attempt to close master account
+        if (account_id == master_account):
+            continue
+        ## keep track of how many active accounts we found
         active += 1
         ## the quota is 20% or 250 accounts per 30 day window
         if (active > max_delete):
             break
-        ## don't attempt to close master account
-        if (account_id == master_account):
-            continue
         logger.info(f"Deleting number {active}, ID {account_id}")
         try:
             ## create the function on the fly then pass in argument so that with_backoff is calling the function instead of function running by itself first
